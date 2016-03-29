@@ -1,0 +1,2952 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="wadl2html.xslt" type="text/xsl"?>
+<wadl:application xmlns:wadl="http://wadl.dev.java.net/2009/02"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://wadl.dev.java.net/2009/02 https://www.w3.org/Submission/wadl/wadl.xsd">
+    <wadl:doc title="The Archival storage component API">
+        The Archival Storage function stores, maintains, and retrieves AIPs. It accepts AIPs submitted from the Ingest function, assigns them to long term storage, checks data integrity, and provides requested AIPs to the Access function
+    </wadl:doc>
+    <wadl:representation id="serverErrorJson" mediaType="application/json">
+        <wadl:doc title="Server error as Json">
+            Represents the information returned by the server when an error happens.<br/>
+            <pre>
+        <![CDATA[        
+        {
+        "date":"_date_",
+        "serviceName":"_serviceName_",
+        "message":"_message_"
+        }
+        ]]></pre>
+        </wadl:doc>
+        
+    </wadl:representation>
+    <wadl:representation id="serverErrorHtml" mediaType="text/html">
+        <wadl:doc title="Server error as Html">
+            Represents the information returned by the server when an error happens.<br/>
+        <![CDATA[<html><header></header><body><h1><_STATUS_ _SHORT-MESSAGE_</h1>
+        _MESSAGE_</body></html>
+        ]]>
+        </wadl:doc>
+    </wadl:representation>    
+
+    <wadl:representation id="AIP" mediaType="application/vnd.geo+json">
+        <wadl:doc>See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json</wadl:doc>         
+        <wadl:param style="header" name="Content-MD5" required="true" type="xsd:string">
+            <wadl:doc>AIP description checksum</wadl:doc>
+        </wadl:param>           
+        <wadl:doc title="AIP representation">
+            <pre>
+        <![CDATA[
+        { 
+          "type": "Feature",
+          "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V1",
+          "creationDate":"1977-04-22T06:00:00Z",
+          "modificationDate":"1977-04-22T06:00:00Z",
+          "status":"archived",
+          "geometry": null,
+          "properties": {
+            "projectName":"CDPP",            
+            "dataObject":{
+                "uri":"file:///tmp/example.zip",
+                "mimeType":"application/zip",
+                "fileSize":1024,
+                "md5":"d6aa97d33d459ea3670056e737c99a3d"
+            },
+            "quicklook":{
+                "uri":"file:///tmp/example.jpg",
+                "mimeType":"image/jpeg",
+                "fileSize":512,
+                "md5":"d6aa97d33d459ea3670056e737c99a3d"        
+            },
+            "thumbnail":{
+                "uri":"file:///tmp/example.jpg",
+                "mimeType":"image/jpeg",
+                "fileSize":256,
+                "md5":"d6aa97d33d459ea3670056e737c99a3d"         
+            },
+            "externalLinks": [
+                {
+                "uri":"file:///tmp/example.pdf",
+                "mimeType":"application/pdf",
+                "fileSize":256,
+                "md5":"d6aa97d33d459ea3670056e737c99a3d" 
+                }
+            ]
+          },
+          "eventsLog": [
+            {
+            "date":"1977-03-20T06:00:00Z",
+            "type":"creation",
+            "message":"Scientific acquisition"            
+            },          
+            {
+            "date":"1977-04-20T06:00:00Z",
+            "type":"modification",
+            "message":"Calibration"
+            },
+            {
+            "date":"1977-05-20T06:00:00Z",
+            "type":"creation",
+            "message":"SIP creation"
+            },            
+            {
+            "date":"1977-06-20T06:00:00Z",
+            "type":"creation",
+            "message":"AIP creation"            
+            }
+          ]
+        }
+        ]]>        
+            </pre>
+        </wadl:doc>
+    </wadl:representation>
+
+    <wadl:representation id="AIPCollection" mediaType="application/vnd.geo+json">
+        <wadl:doc>See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json</wadl:doc>     
+                        <wadl:doc title="AIPCollection representation">
+ <pre>
+ <![CDATA[
+{
+    "type": "FeatureCollection",
+    "properties": {
+        "totalResults":10000000,
+        "startPage":1,
+        "itermsPerPage":50,
+        "query" : {
+            "searchFilters":{
+                "projectName":"CDPP",
+                "startPage":1,
+                "itemsPerPage":50,
+                "type":"*",
+                "modificationDate":["2016/01/01T05:00:00", "2016/04/01T05:00:00"]
+            },
+        },
+        "links": [
+            {
+                "rel":"self",
+                "type":"application/json",
+                "title":"self",
+                "href":"https://example.com/api/storage/AIP?startPage=1&itemsPerPage=50"
+            },
+            {
+                "rel":"search",
+                "type":"application/vdn.sun.wadl+xml",
+                "title":"API description",
+                "href":"https://example.com/api/storage/AIP?method=OPTIONS"
+            },
+            {
+                "rel":"next",
+                "type":"application/json",
+                "title":"next",
+                "href":"https://example.com/api/storage/AIP?startPage=2&itemsPerPage=50"
+            },
+            {
+                "rel":"last",
+                "type":"application/json",
+                "title":"last",
+                "href":"https://example.com/api/storage/AIP?startPage=200000&itemsPerPage=50"
+            },                                       
+        ],
+        "features": [
+        ... // See AIP representation
+        ]
+    }
+    
+}
+      ]]></pre>                           
+                        </wadl:doc>
+        
+    </wadl:representation>
+
+    <wadl:representation id="createJob" mediaType="text/plain">
+        <wadl:param name="Location" style="header" required="true">
+            <wadl:doc>URL to the job status</wadl:doc>
+        </wadl:param>                
+        <wadl:doc title="job Creation">
+            Returns the jobID.
+        </wadl:doc>
+    </wadl:representation>
+    
+    <wadl:representation id="files" mediaType="application/json">
+        <wadl:doc title="files">
+            <pre>
+    <![CDATA[
+      {
+       files : [
+         {
+         "uri":"file:///tmp/example.jpg",
+         "mimeType":"image/jpeg",
+         "fileSize":256,
+         "md5":"d6aa97d33d459ea3670056e737c99a3d",
+         "category":"Quicklook" 
+         }
+       ]
+      }
+    ]]>
+            </pre>
+        </wadl:doc>
+    </wadl:representation>    
+    
+    <wadl:representation id="version" mediaType="application/json">
+        <wadl:doc title="Version">
+            <pre>
+        <![CDATA[        
+        { 
+          "type": "FeatureCollection",
+          "features": [
+            {
+             "type": "Feature",
+             "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V1",
+             "creationDate":"1977-04-22T06:00:00Z",
+             "modificationDate":"1977-04-22T06:00:00Z",
+             ...
+            },
+            {
+             "type": "Feature",
+             "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V2",
+             "creationDate":"1977-04-22T06:00:00Z",
+             "modificationDate":"1977-04-23T06:00:00Z",
+             ...
+            },
+            {
+             "type": "Feature",
+             "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V2:REV1",
+             "creationDate":"1977-04-22T06:00:00Z",
+             "modificationDate":"1977-04-25T06:00:00Z",
+             ...
+            }         
+           ]
+        }
+        ]]>
+            </pre>                                                        
+        </wadl:doc>                        
+    </wadl:representation>
+    
+    <wadl:representation id="events" mediaType="application/json">
+        <wadl:doc title="EventsLog">
+            <pre>
+        <![CDATA[        
+        { 
+          "type": "FeatureCollection",
+          "features": [
+            {
+             "type": "Feature",
+             "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V1",
+             "eventsLog":"......"
+            },
+            {
+             "type": "Feature",
+             "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V2",
+             "creationDate":"1977-04-22T06:00:00Z",
+             "eventsLog":"......"
+            },
+            {
+             "type": "Feature",
+             "id":"URN:AIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6:V2:REV1",
+             "eventsLog":"......"
+            }         
+           ]
+        }
+        ]]>
+            </pre>                                                        
+        </wadl:doc>                        
+    </wadl:representation>    
+    
+    <wadl:representation id="monitoring" mediaType="application/json">
+        <wadl:doc title="Monitoring">                                                      
+        </wadl:doc>                        
+    </wadl:representation>    
+    
+    <wadl:representation id="orders" mediaType="application/json">
+        <wadl:doc title="OrderCollection">                                                      
+        </wadl:doc>                        
+    </wadl:representation>   
+    
+    <wadl:representation id="order" mediaType="application/json">
+        <wadl:doc title="Order">                                                      
+        </wadl:doc>                        
+    </wadl:representation>  
+    
+    <wadl:representation id="octets" mediaType="application/octet-stream">
+        <wadl:doc title="DataDownload"></wadl:doc>
+    </wadl:representation>
+    
+    <wadl:representation id="graphics" mediaType="image/*">
+        <wadl:doc title="GraphicImage"></wadl:doc>
+    </wadl:representation>                                              
+    
+    <wadl:resources base="http://api.storage.regards">
+        <wadl:resource path="AIP">
+            <wadl:doc>Handles AIPs within the Archival Storage component.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>
+                    Lists AIPs from the Archival Storage component according to the project name.
+                    In addition, this resource allows to follow up the archive status of each AIP.
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="query" name="projectName" required="true" type="xsd:string">
+                        <wadl:doc>Constraints the query on the the project name. A project name must be declared in the REGARDS instance.</wadl:doc>                
+                    </wadl:param>            
+                    <wadl:param style="query" name="startPage" required="false" default="1" type="xsd:int">
+                        <wadl:doc>Page number of the result. The page number starts to 1.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="itemsPerPage" required="false" default="50" type="xsd:int">
+                        <wadl:doc>Number of items per page that returns the server.</wadl:doc>
+                    </wadl:param>            
+                    <wadl:param style="query" name="filterByTagName" required="false" type="xsd:string">
+                        <wadl:doc>Constains the query on a list of tag name. A tag name is a label that links an AIP to a collection.</wadl:doc>
+                    </wadl:param>      
+                    <wadl:param style="query" name="filterByType" required="false" default="*" type="xsd:string">
+                        <wadl:doc>Containts the query on AIP types. By default, the query is performed on all the AIP types</wadl:doc>
+                        <wadl:option value="*">
+                            <wadl:doc>All AIP types</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="data">
+                            <wadl:doc>AIP that describes the main file to preserve (e.g. scientific acquisition).</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="document">
+                            <wadl:doc>AIP that describes a document.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="collection">
+                            <wadl:doc>AIP that describes a collection of AIP.</wadl:doc>
+                        </wadl:option>
+                    </wadl:param>
+                    <wadl:param style="query" name="filterByState" required="false">
+                        <wadl:doc>Filters the session by processing state</wadl:doc>                      
+                        <wadl:option value="QUEUED">
+                            <wadl:doc>The storage of the AIP has been accepted for execution but is waiting in a queue.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="EXECUTING">
+                            <wadl:doc>The storage of the AIP is running.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="COMPLETED">
+                            <wadl:doc>The AIP is archived. This means that all AIP external files have been stored.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ERROR">
+                            <wadl:doc>Some form of error has occured.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ABORTED">
+                            <wadl:doc>The storage of the AIP has been aborted, either by user request of by the server because of lack or overuse of ressources</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="SUSPENDED">
+                            <wadl:doc>The storage of the AIP has been suspended by the system during the execution. This might be because of temporary lack of resource. The job will be automatically resumed into the EXECUTNG phase without any intervention when ressource becomes available.</wadl:doc>
+                        </wadl:option>
+                    </wadl:param>                                                
+                    <wadl:param style="query" name="modificationDate" required="false" type="xsd:dateTime">
+                        <wadl:doc>Constaints the query on new AIP from the modification date.</wadl:doc>
+                    </wadl:param>                         
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                           
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Returns the list of AIPs for a given project</wadl:doc>
+                    <wadl:representation href="#AIPCollection"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                  
+               
+            </wadl:method>
+    
+            <wadl:method name="POST">
+                <wadl:doc>
+                    Stores an AIP and creates a new version when the identifier already exists.
+                    When the checksum of the submitted AIP is the same as an AIP already submitted, the storage of the AIP is refused.
+                </wadl:doc>
+                <wadl:request>            
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                 
+                    <wadl:representation href="#AIP"/>
+                </wadl:request>
+                <wadl:response status="303">
+                    <wadl:doc>Redirects to AIP/{IP_ID}.</wadl:doc>                    
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>   
+                <wadl:response status="400">
+                    <wadl:doc>The AIP representation is not valid. The problem may come when the IP_ID or a checksum related to a file are not set in the AIP description.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                     
+                </wadl:response>                             
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>     
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>            
+                <wadl:response status="409">
+                    <wadl:doc>The submitted AIP is refused because it was already submitted with the same information.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                            
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                        
+        </wadl:resource>              
+              
+        <wadl:resource path="AIP/{IP_ID}">
+            <wadl:doc>Handles an AIP.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>
+                    Retrives the AIP description and its archival status.
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                 
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                   
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation href="#AIP"/>
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                
+            </wadl:method>
+            
+            <wadl:method name="POST">
+                <wadl:doc>
+                    Creates an new revision of the AIP description. 
+                    The revision is performed by the administrator
+                    According to the checksum of the AIP, the operation is allowed.
+                </wadl:doc>
+                <wadl:request>    
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                           
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                 
+                    <wadl:representation href="#AIP"/>                              
+                </wadl:request>
+                <wadl:response status="303">
+                    <wadl:doc>Redirects to AIP/{IP_ID}.</wadl:doc>
+                </wadl:response>                                    
+                <wadl:response status="400">
+                    <wadl:doc>
+                        The AIP representation is not valid. The problem may come when the IP_ID or a checksum related to a file are not set in the AIP description.
+                    </wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                     
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>    
+                <wadl:response status="409">
+                    <wadl:doc>The submitted AIP is refused because it was already submitted with the same information.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                              
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>
+            </wadl:method>  
+            
+            <wadl:method name="PUT">
+                <wadl:doc>
+                    Updates an AIP description without any revision. 
+                    This update is performed by the administrator
+                    According to the checksum of each external URI regarding to those already stored,
+                    the operation is performed and the archived files are replaced by the external ones.
+                </wadl:doc>
+                <wadl:request>    
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                           
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                 
+                    <wadl:representation href="#AIP"/>                              
+                </wadl:request>
+                <wadl:response status="303">
+                    <wadl:doc>Redirects to AIP/{IP_ID}.</wadl:doc>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>
+                        The AIP representation is not valid. The problem may come when the IP_ID or a checksum related to a file are not set in the AIP description.
+                    </wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                     
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+               <wadl:response status="409">
+                    <wadl:doc>The submitted AIP is refused because it was already submitted with the same information.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+            </wadl:method>   
+            
+            <wadl:method name="DELETE">
+                <wadl:doc>Deletes an AIP. Data referenced by AIP is deleted when there is no more AIP referencing these data. This action is performed by the administrator.</wadl:doc>
+                <wadl:request>    
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                           
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                                                 
+                </wadl:request>
+                <wadl:response status="303">
+                    <wadl:doc>Redirects to AIP/{IP_ID}.</wadl:doc>
+                </wadl:response>               
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="423">
+                    <wadl:doc>The resource is locked.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>
+            </wadl:method>  
+            
+            <wadl:method name="HEAD">
+                <wadl:doc>Gets the AIP description checksum.</wadl:doc>
+                <wadl:request>    
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                           
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                                                 
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Gets the AIP checksum.</wadl:doc>
+                    <wadl:representation mediaType="text/plain">
+                        <wadl:doc title="Checksum">
+                            The AIP description checksum.
+                        </wadl:doc>
+                    </wadl:representation>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>
+            </wadl:method>  
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>            
+                                                                                                                                                                                  
+        </wadl:resource>
+        
+        <wadl:resource path="AIP/{IP_ID}/files">
+            <wadl:doc>Lists the files related to the AIP description.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists the files related to the AIP description.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                           
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                     
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The file related to the AIP description.</wadl:doc>
+                    <wadl:representation href="#files"/>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>               
+            </wadl:method>  
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                       
+        </wadl:resource>  
+        
+        <wadl:resource path="AIP/{IP_ID}/files/{ID}">
+            <wadl:doc>Lists the files related to the AIP description.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists the files related to the AIP description.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="template" name="ID" required="true" type="xsd:string">
+                        <wadl:doc>The file identifier.</wadl:doc>
+                    </wadl:param>                                                             
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                        
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The file related to the AIP description.</wadl:doc>
+                    <wadl:param style="header" name="Content-MD5" required="true" type="xsd:string">
+                        <wadl:doc>File checksum</wadl:doc>
+                    </wadl:param>                      
+                    <wadl:representation href="#octets"/>
+                    <wadl:representation href="#graphics"/>
+                </wadl:response>
+                <wadl:response status="204">
+                    <wadl:doc>
+                        The response is asynchronous. The file is being transfered on the online storage.
+                    </wadl:doc>
+                </wadl:response>                              
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID or ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>              
+            </wadl:method> 
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                        
+        </wadl:resource>                      
+
+        <wadl:resource path="AIP/{IP_ID}/versions">
+            <wadl:doc>Lists the different versions related to the AIP description.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists the files related to the AIP description.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                                               
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                         
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The different versions related to the AIP description.</wadl:doc>
+                    <wadl:representation href="#version"/>
+                </wadl:response>                                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>               
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                          
+        </wadl:resource> 
+        
+        <wadl:resource path="AIP/{IP_ID}/eventsLog">
+            <wadl:doc>Lists the processing events of the AIP description.</wadl:doc>
+	    <wadl:method name="GET">
+                <wadl:doc>Lists the processing events of the AIP description.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                                               
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                         
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The eventsLog representation.</wadl:doc>
+                    <wadl:representation href="#events"/>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                          
+        </wadl:resource>
+        
+        <wadl:resource path="AIP/{IP_ID}/tags">
+            <wadl:doc>Handles tags according to an AIP</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists tags related to an AIP</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                                               
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                         
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Lists the tags related to an AIP.</wadl:doc>
+                    <wadl:representation mediaType="application/json">
+                  </wadl:representation>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>               
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>Adds a tag to an AIP.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>                                                               
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="query" name="Tag" required="true" type="xsd:string">
+                        <wadl:doc>The tag to add to an AIP.</wadl:doc>
+                    </wadl:param>                                                          
+                </wadl:request>
+                <wadl:response status="200">
+                </wadl:response>                                        
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                       
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                            
+            </wadl:method> 
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                          
+        </wadl:resource>
+
+        <wadl:resource path="AIP/{IP_ID}/tags/{tagID}">
+            <wadl:method name="DELETE">
+                <wadl:doc>Deletes a tag from an AIP.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="template" name="IP_ID" required="true" type="xsd:string">
+                        <wadl:doc>The AIP identifier.</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="template" name="tagID" required="true" type="xsd:string">
+                        <wadl:doc>The tag identifier.</wadl:doc>
+                    </wadl:param>                                                                                   
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                                            
+                </wadl:request>
+                <wadl:response status="200">
+                </wadl:response>                                       
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                       
+                <wadl:response status="404">
+                    <wadl:doc>IP_ID or tagID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The AIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                              
+            </wadl:method>  
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>               
+        </wadl:resource>   
+
+                
+        <wadl:resource path="AIP/tags">
+            <wadl:doc>Handles the tags.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists the unique elements related to the created tags for AIPs. The list can be consults by the instance administrator or by the project administrator</wadl:doc>
+                <wadl:request>                                                            
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="projectName" required="false" type="xsd:string">
+                        <wadl:doc>Constraints the query on the the project name. A project name must be declared in the REGARDS instance.</wadl:doc>                
+                    </wadl:param>                                                              
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The list of tags.</wadl:doc>
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="TagCollection">
+                            <pre>
+        <![CDATA[        
+        {
+            "<tagID>":{
+                "name":"<filterByTagName>",
+                "project":"<projectName>",
+                "count":"<totalNumberInTheContextProject>"
+            }, ...
+        }
+        ]]></pre>                
+                        </wadl:doc>        
+                    </wadl:representation>
+                </wadl:response>                                      
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                                            
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                
+            </wadl:method>   
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                                                                                                                                                                
+        </wadl:resource>                                                                                                                       
+  
+
+        <wadl:resource path="AIP/tags/{tagID}">
+            <wadl:doc>Handles the tags.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists the AIPs related to this tagID.</wadl:doc>
+                <wadl:request>                                                            
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="template" name="tagID" required="true" type="xsd:string">
+                        <wadl:doc>The tag identifier.</wadl:doc>
+                    </wadl:param>                                                          
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The list of AIPs.</wadl:doc>
+                    <wadl:representation href="#AIP"/>
+                </wadl:response>                                      
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>tagID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>               
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>Links AIPs to a tagID or a subset of tagID.</wadl:doc>
+                <wadl:request>                                                            
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="query" name="projectName" required="false" type="xsd:string">
+                        <wadl:doc>The list of AIPs separated by comma</wadl:doc>
+                    </wadl:param>                                     
+                    <wadl:representation>
+                        <wadl:doc title="AIPList">List of AIP identifiers</wadl:doc>
+                    </wadl:representation>                                                                
+                </wadl:request>
+                <wadl:response status="200"/>                          
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>tagID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>               
+            </wadl:method>             
+            <wadl:method name="DELETE">
+                <wadl:doc>Deletes a tag from all AIPs or a subset of AIPs.</wadl:doc>
+                <wadl:request>                                                            
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token.</wadl:doc>
+                    </wadl:param>                                  
+                    <wadl:param style="template" name="tagID" required="true" type="xsd:string">
+                        <wadl:doc>The tag name</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="query" name="project" required="false" type="xsd:string">
+                        <wadl:doc>The project name.</wadl:doc>
+                    </wadl:param>                                                           
+                    <wadl:representation mediaType="application/json" >
+                        <wadl:doc title="AIPList">List of AIPs to delete.</wadl:doc>
+                    </wadl:representation>
+                </wadl:request>
+                <wadl:response status="201"/>                          
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>tagID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>              
+            </wadl:method>                       
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                                    
+        </wadl:resource>  
+               
+        <wadl:resource path="monitoring">  
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                     
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation href="#monitoring"/>
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                        
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                 
+            </wadl:method> 
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                        
+        </wadl:resource>             
+                                                                                                                                                                     
+        <wadl:resource path="monitoring/{StorageID}"> 
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="template" name="StorageID"></wadl:param>                   
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation href="#monitoring"/>
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>StorageID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                 
+            </wadl:method> 
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                                     
+        </wadl:resource> 
+        
+        <wadl:resource path="orders">
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                                          
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation href="#orders"/>
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                 
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>               
+        </wadl:resource>
+        
+         <wadl:resource path="orders/{orderID}">
+             <wadl:doc>Handles an order.</wadl:doc>
+             <wadl:method name="GET">
+                 <wadl:doc>Retrieves an order.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>     
+                    <wadl:param style="template" name="orderID" required="true" type="xsd:string">
+                        <wadl:doc>Order identifer.</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="query" name="package" required="false" default="NONE">
+                        <wadl:doc>Creates a package as Tar/zip</wadl:doc>
+                        <wadl:option value="TAR"/>
+                        <wadl:option value="ZIP"/>
+                        <wadl:option value="NONE"/>
+                    </wadl:param>                                                                               
+                </wadl:request>  
+                <wadl:response status="200">
+                    <wadl:representation href="#order"/>
+                </wadl:response>          
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>orderID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                      
+             </wadl:method>
+             <wadl:method name="DELETE">
+                 <wadl:doc>Deletes an order</wadl:doc>
+                 <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>     
+                    <wadl:param style="template" name="orderID" required="true" type="xsd:string">
+                        <wadl:doc>Order identifer.</wadl:doc>
+                    </wadl:param>                      
+                 </wadl:request>
+                 <wadl:response status="201"/>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>orderID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                            
+             </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                
+        </wadl:resource>       
+        
+         <wadl:resource path="orders/{orderID}/{fileID}">
+            <wadl:doc>Handles files from an order.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:request>
+                   <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                       <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                   </wadl:param>     
+                   <wadl:param style="template" name="orderID" required="true" type="xsd:string">
+                       <wadl:doc>Order identifer.</wadl:doc>
+                   </wadl:param>      
+                   <wadl:param style="template" name="fileID" required="true" type="xsd:string">
+                       <wadl:doc>file identifer.</wadl:doc>
+                   </wadl:param>                                
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:param style="header" name="Content-MD5" required="true" type="xsd:string">
+                        <wadl:doc>File checksum</wadl:doc>
+                    </wadl:param>                      
+                    <wadl:representation href="#octets"/>
+                    <wadl:representation href="#graphics"/>                    
+                </wadl:response>
+                <wadl:response status="204">
+                    <wadl:doc>
+                        The response is asynchronous. The file is being transfered on the online storage.
+                    </wadl:doc>                    
+                </wadl:response>                              
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="404">
+                    <wadl:doc>tagID is not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                        
+            </wadl:method>  
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>               
+        </wadl:resource>  
+
+        <wadl:resource path="jobs">    
+            <wadl:doc>Handles job collection.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Lists the jobs.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="query" name="projectName" required="false" type="xsd:string">
+                        <wadl:doc>Constraints the query on the the project name. A project name must be declared in the REGARDS instance.</wadl:doc>                
+                    </wadl:param>            
+                    <wadl:param style="query" name="startPage" required="false" default="1" type="xsd:int">
+                        <wadl:doc>Page number of the result. The page number starts to 1.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="itemsPerPage" required="false" default="50" type="xsd:int">
+                        <wadl:doc>Number of items per page that returns the server.</wadl:doc>
+                    </wadl:param>                                  
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                                              
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="JobCollection"></wadl:doc>
+                    </wadl:representation>                                       
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+            </wadl:method>        
+            <wadl:method name="POST">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="submitJob"></wadl:doc>
+                    </wadl:representation>                  
+                </wadl:request>
+                <wadl:response status="303">
+                    <wadl:param style="header" name="Location" required="true">
+                        <wadl:doc>The redirection URL to the jobID</wadl:doc>                                                                   
+                    </wadl:param>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                   
+            </wadl:method>
+        </wadl:resource>   
+
+        <wadl:resource path="jobs/getCapabilities">
+            <wadl:doc>getCapabilities for order, download, representation</wadl:doc>
+            <wadl:doc>
+                job : order -> asynchrone / synchrone
+                job : download -> synchone
+                job : representation
+            </wadl:doc>              
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                    
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="Capabilities"></wadl:doc>
+                    </wadl:representation>                                         
+                </wadl:response> 
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                               
+            </wadl:method>
+        </wadl:resource> 
+                                                        
+        <wadl:resource path="jobs/{jobID}"> 
+            <!-- 
+                Lancer un job créé via JobID 
+                Annuler le job en cours ou en attente
+                Consulter état + status
+                Supprimer
+            -->
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="template" name="jobID" required="true" type="xsd:string">
+                        <wadl:doc>The job identifier</wadl:doc>
+                    </wadl:param>                     
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="Job"></wadl:doc>
+                    </wadl:representation>                                         
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>jobID not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                   
+            </wadl:method>
+            <wadl:method name="DELETE">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="template" name="jobID">
+                        <wadl:doc>Job identifier</wadl:doc>
+                    </wadl:param>                    
+                </wadl:request>
+                <wadl:response status="201">
+                    <wadl:doc>Deleted</wadl:doc>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>jobID not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                       
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+            </wadl:method>            
+        </wadl:resource>        
+        
+        <wadl:resource path="jobs/{jobID}/status">     
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="template" name="JobID" required="true" type="xsd:string">
+                        <wadl:doc>Job identifier.</wadl:doc>
+                    </wadl:param>                     
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="Status"></wadl:doc>
+                    </wadl:representation>                                        
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>jobID not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+            </wadl:method>  
+            <wadl:method name="PUT">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="template" name="JobID" required="true" type="xsd:string">
+                        <wadl:doc>Job identifier.</wadl:doc>
+                    </wadl:param>                                         
+                </wadl:request>
+                <wadl:response status="201">
+                    <wadl:doc>OK</wadl:doc>  
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>jobID not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+            </wadl:method>                                          
+        </wadl:resource>         
+        
+        <wadl:resource path="jobs/{jobID}/results"> 
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="template" name="JobID" required="true" type="xsd:string">
+                        <wadl:doc>Job identifier.</wadl:doc>
+                    </wadl:param>                                         
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation mediaType="application/json">
+                        <wadl:doc title="Results"></wadl:doc>
+                    </wadl:representation>                                                                          
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>jobID not found.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+            </wadl:method>                        
+        </wadl:resource>           
+                                
+    </wadl:resources>
+
+</wadl:application>

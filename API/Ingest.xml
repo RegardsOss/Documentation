@@ -1,0 +1,1860 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="wadl2html.xslt" type="text/xsl"?>
+<wadl:application xmlns:wadl="http://wadl.dev.java.net/2009/02"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://wadl.dev.java.net/2009/02 https://www.w3.org/Submission/wadl/wadl.xsd">
+    <wadl:doc title="The Ingest component API">
+        The Ingest component receives information from producers and packages it for storage. It accepts a SIP, verifies it, creates an AIP from the SIP, and transfers the newly created AIP to archival storage.
+    </wadl:doc>
+    <wadl:doc>
+        An IP (Information Package) is a conceptual container of two types of information called Content Information and Preservation Description Information (PDI).
+        The Content Information and PDI are viewed as being encapsulated and identifiable by the Pakaging Information. The resulting package is viewed as being discoverable by virtue of the Descriptive Information.<br/>
+        <br/>
+        The Content Information is that information which is the original target of preservation. It consists of 
+        <ul>
+            <li>the Content Data Objet : digital object</li>
+            <li>and its associated Representation Information needed to make the Content Data Object understandable to the Designated Community</li>
+        </ul>
+        The PDI applies to the Content Information and is needed to preserve the Content Information, to ensure it is clearly and to understand the environment in which the Content Information was created.
+        The PDI is divided in types of preserving information.
+        <ul>
+            <li>Provenance describes the source of the Content Information, who has had custody of it since its origination, and its history (including processing history)</li>
+            <li>Context describes how the Content Information relates to other information outside the Information Package. For example, it would describe why the Content Information was produced, and it may include a description of how it relates to another Content Information object that is available.</li>
+            <li>Reference provides one or more identifiers, or systems of identifiers, by which the Content Information may be uniquely identified.</li>
+            <li>Fixity provides a mean that protects the Content Information from undocumented alteration (For example : a checksum)</li>
+            <li>Access Rights provide the terms of access, including preservation, distribution, and usage of Content Information (Example : licensing for distribution)</li>
+        </ul>      
+        The Descriptive Information is that information which is used to discover which package has the Content Information of interest.
+    </wadl:doc>
+    <wadl:doc>
+        A SIP (Submission Information Package) is an Information Package that is delivered to the Archive. The SIP includes URI to the file to preserve (data object) and all the necessary related metadata about the data object and its content.
+    </wadl:doc>
+    <wadl:doc>
+        An AIP (Archival Information Package) is an Information Package that is used to transmit archival objects into a digital archival system, store the objects within the system, and transmit objects from the system.
+        An AIP contains both metadata that describes the structure and the content. It consists of multiple data files that hold a logically packaged entity.
+    </wadl:doc>
+    <wadl:doc>
+        <comment>
+            Si on ne traduit pas un FITS, VOTable dans le format geoJson, on risque de perdre en puissance de requêtage
+            car on ne pourra pas rechercher sur l'ensemble des métadonnées du FITS, VOTable, ... car les concepts ne seront pas
+            mappés/indexés à ce niveau. Marc une idée ?
+        </comment>
+    </wadl:doc>
+
+    <wadl:representation id="serverErrorJson" mediaType="application/json">
+        <wadl:doc title="Server error as Json">
+            Represents the information returned by the server when an error happens.<br/>
+            <pre>
+        <![CDATA[        
+        {
+        "date":"_date_",
+        "serviceName":"_serviceName_",
+        "message":"_message_"
+        }
+        ]]></pre>
+        </wadl:doc>
+        
+    </wadl:representation>
+    <wadl:representation id="serverErrorHtml" mediaType="text/html">
+        <wadl:doc title="Server error as Html">
+            Represents the information returned by the server when an error happens.<br/>
+        <![CDATA[<html><header></header><body><h1><_STATUS_ _SHORT-MESSAGE_</h1>
+        _MESSAGE_</body></html>
+        ]]>
+        </wadl:doc>
+    </wadl:representation>    
+    <wadl:representation id="sessionCollection" mediaType="application/vnd.geo+json">
+        <wadl:doc>
+            See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json
+        </wadl:doc>         
+        <wadl:doc title="Session Collection">
+            Represents the information about a collection of sessions.<br/>
+            <pre>
+ <![CDATA[
+{
+    "type": "FeatureCollection",
+    "properties": {
+        "totalResults":100,
+        "startPage":1,
+        "itermsPerPage":50,
+        "query" : {
+            "searchFilters":{
+            },
+        },
+        "links": [
+            {
+                "rel":"self",
+                "type":"application/vnd.geo+json",
+                "title":"self",
+                "href":"http://api.regards.ingest/sessions?startPage=1&itemsPerPage=50"
+            },
+            {
+                "rel":"search",
+                "type":"application/vdn.sun.wadl+xml",
+                "title":"API description",
+                "href":"http://api.regards.ingest/sessions?method=OPTIONS"
+            },
+            {
+                "rel":"next",
+                "type":"application/vnd.geo+json",
+                "title":"next",
+                "href":"http://api.regards.ingest/sessions?startPage=2&itemsPerPage=50"
+            },
+            {
+                "rel":"last",
+                "type":"application/vnd.geo+json",
+                "title":"last",
+                "href":"http://api.regards.ingest/sessions?startPage=2&itemsPerPage=50"
+            },                                       
+        ],
+        "features": [
+            {
+               "type": "Feature",
+               "id":"URN:SESSION:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+                "creationDate":"1977-04-22T06:00:00Z",
+                "modificationDate":"1977-04-22T06:00:00Z",
+                "geometry": null,
+                "status":"OPENED",
+                "properties": {
+                    "numberOfSIPs":1000,
+                    "submittedSIPs":995
+                    "responsible":"person@example.com",                    
+                    "SIP_OK": 990, // when the AIP is considered as "archived"
+                    "SIP_IN_PROGRESS":3,
+                    "SIP_FAILED":2
+                }               
+            }, ...
+        ]
+    }
+    
+}
+      ]]></pre>             
+        </wadl:doc>
+    </wadl:representation>  
+    
+    <wadl:representation id="session" mediaType="application/vnd.geo+json">
+        <wadl:doc>
+            See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json
+        </wadl:doc>          
+        <wadl:doc title="Session">
+            Represents the information about a session.<br/>
+            <pre>
+        <![CDATA[
+        { 
+          "type": "Feature",
+          "id":"URN:SESSION:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+          "creationDate":"1977-04-22T06:00:00Z",
+          "modificationDate":"1977-04-22T06:00:00Z",
+          "geometry": null,
+          "status":"OPENED",
+          "properties": {
+              "numberOfSIPs":1000,
+              "submittedSIPs":995,
+              "responsible":"person@example.com",              
+              "SIP_OK": [ // COMPLETED, ARCHIVED
+                {
+                  "projectName":"....",
+                  "submittedDate": "...",
+                  "ingestedDate": "....",
+                  "SIP_ID": "....",
+                  "IP_ID": "....",
+                  "SIP_STATE": "..." // One of these values : COMPLETED, ARCHIVED
+                }, ...
+              ],              
+              "SIP_IN_PROGRESS": [ //QUEUED, EXECUTING, SUSPENDED 
+                {
+                  "projectName":"....",                
+                  "submittedDate": "....",
+                  "SIP_ID": "....",
+                  "IP_ID": "....",
+                  "SIP_STATE":"..." // One of these values : QUEUED, EXECUTING, SUSPENDED 
+                }, ...
+              ],                        
+              "SIP_FAILED": [ //ERROR, ABORTED
+                {
+                  "projectName":"....",                
+                  "submittedDate": "....",
+                  "errorDate": "....",
+                  "SIP_ID": "....",
+                  "IP_ID": "....",
+                  "SIP_STATE": "...." // One of these values : ERROR, ABORTED
+                }, ...
+              ]                 
+           }
+        }
+        ]]>  
+            </pre>           
+        </wadl:doc>
+    </wadl:representation>      
+    
+    
+    <wadl:representation id="createJob" mediaType="text/plain">
+        <wadl:param name="Location" style="header" required="true">
+            <wadl:doc>URL to the job status</wadl:doc>
+        </wadl:param>                
+        <wadl:doc title="job Creation">
+            Returns the jobID.
+        </wadl:doc>
+    </wadl:representation>
+
+    <wadl:representation id="sipCollection" mediaType="application/vnd.geo+json">
+        <wadl:doc>
+            See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json
+        </wadl:doc>         
+        <wadl:doc title="Submitted Information Package Collection">
+            Represents the information about a collection of SIP.<br/>
+            <pre>
+        <![CDATA[
+{
+    "type": "FeatureCollection",
+    "properties": {
+        "totalResults":10000000,
+        "startPage":1,
+        "itermsPerPage":50,
+        "query" : {
+            "searchFilters":{
+            },
+        },
+        "links": [
+            {
+                "rel":"self",
+                "type":"application/vnd.geo+json",
+                "title":"self",
+                "href":"http://api.regards.ingest/sips?startPage=1&itemsPerPage=50"
+            },
+            {
+                "rel":"search",
+                "type":"application/vdn.sun.wadl+xml",
+                "title":"API description",
+                "href":"http://api.regards.ingest/sips?method=OPTIONS"
+            },
+            {
+                "rel":"next",
+                "type":"application/vnd.geo+json",
+                "title":"next",
+                "href":"http://api.regards.ingest/sips?startPage=2&itemsPerPage=50"
+            },
+            {
+                "rel":"last",
+                "type":"application/vnd.geo+json",
+                "title":"last",
+                "href":"http://api.regards.ingest/sips?startPage=200000&itemsPerPage=50"
+            },                                       
+        ],        
+        "features": [
+            // see IP representation.
+        ]
+    }
+    
+}        
+        ]]>                 
+            </pre>
+        </wadl:doc>
+    </wadl:representation>                
+
+    <wadl:representation id="sipProvider" mediaType="application/vnd.geo+json">
+        <wadl:doc>
+            See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json
+        </wadl:doc>        
+        <wadl:doc title="Submitted SIP">
+            Represent the information which is submitted to the server to ingest a file.<br/>
+            <pre>
+        <![CDATA[
+        { 
+          "type": "Feature",
+          "id":"...", //SIP_ID
+          "creationDate":"1977-04-22T06:00:00Z",
+          "modificationDate":"1977-04-22T06:00:00Z",
+          "geometry": null,
+          "properties": {
+            "dataObject":{
+                "uri":"file:///tmp/example.zip",
+                "mimeType":"application/zip",
+                "fileSize":1024, //KB
+                "md5":"d6aa97d33d459ea3670056e737c99a3d"
+            },
+           "pdi": {
+              "provenance": {
+                  "acquisitionDate": "....",
+                  "responsiblePerson": "person@example.com",
+                  "responsibleOrganization": "CNES"
+                  "processingHistory": [ 
+                  ]
+              },
+              "context": {
+                  "objectName": "...",
+                  "purpose": "....",
+                  "acquisitionDate": "...",
+                  ...
+              },
+              "accessRights": {
+                  "licensing": "CNES",
+                  "pubicationAcknowledgment": "Based on data obtained from the SSALTO Science Archive Facility."
+              }
+           }
+          },
+          "modificationReason":"....", // used to describe the reason of the modification (update or new version)
+        }
+        // TODO : core data model must be defined.
+        ]]>                 
+            </pre>            
+        </wadl:doc>
+    </wadl:representation> 
+    
+    <wadl:representation id="sipProviderAsEmbeddedFile" mediaType="multipart/form-data">  
+        <wadl:doc>
+            <version>
+                Add this representation to handle an embedded file in the request.
+                The supported formats are based on a plugin.
+            </version>
+        </wadl:doc>      
+        <wadl:doc title="Submitted SIP as embedded file">
+            Represent the information which is submitted to the server to ingest a file.<br/>  
+        </wadl:doc>                
+        <wadl:param style="query" name="file" required="true" type="xs:base64Binary">
+            <wadl:doc>File to join. The name of the file is the SIP identifier</wadl:doc>
+        </wadl:param>
+        <wadl:param style="query" name="format" required="true">
+            <wadl:option value="application/x-votable+xml">
+                <wadl:doc>VOTable format</wadl:doc>
+            </wadl:option>
+            <wadl:option value="application/fits">
+                <wadl:doc>Fits file</wadl:doc>
+            </wadl:option>            
+        </wadl:param>
+            <wadl:param style="query" name="modificationReason" required="false" type="xs:base64Binary">
+            <wadl:doc>The reason of the modification.</wadl:doc>
+        </wadl:param>    
+    </wadl:representation> 
+
+    <wadl:representation id="sipProviderAsReference" mediaType="application/x-regards+json">  
+        <wadl:doc>
+            <version>
+                Add this representation to handle a file accessible from the ingest component.
+                The supported formats are based on a plugin.
+            </version>
+        </wadl:doc>       
+        <wadl:doc title="Submitted SIP as external reference">
+            Represent the information which is submitted to the server to ingest a file.<br/>   
+            <pre>
+                <![CDATA[
+{
+    "id":"{SIP_ID}", // pourrait être retrouvé dans le SIP!?
+    "format" : "{format_id?}" // application/x-votable+xml, application/fits, application/vnd.geo+json
+    "fileuri" : "file:///tmp/sip1.xml", // le SIP!
+    "modificationReason":"..."
+}                
+                ]]>
+            </pre>        
+        </wadl:doc>       
+    </wadl:representation>     
+    
+    <wadl:representation id="ip" mediaType="application/vnd.geo+json">
+        <wadl:doc>
+            See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json
+        </wadl:doc>  
+        <wadl:doc>
+            <version>
+                Add comments
+            </version>
+        </wadl:doc>      
+        <wadl:doc title="Information Package">
+            Represents the information about a SIP version.<br/>
+            <pre>
+        <![CDATA[
+        { // inside properties can be replaced by the URI of the FITS, VOTable or external SIP
+          "type": "Feature",
+          "id":"URN:SIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6", //IP_ID
+          "SIP_ID":"....",
+          "creationDate":"1977-04-22T06:00:00Z",
+          "modificationDate":"1977-04-22T06:00:00Z",
+          "geometry": null,
+          "status" : "COMPLETED", // COMPLETED, ARCHIVED, ...
+          "projectName":"....",
+          "properties": {
+            "dataObject":{
+                "uri":"file:///tmp/example.zip",
+                "mimeType":"application/zip",
+                "fileSize":1024, //KB
+                "md5":"d6aa97d33d459ea3670056e737c99a3d"
+            },
+           "pdi": {
+              "provenance": {
+                  "acquisitionDate": "....",
+                  "responsiblePerson": "person@example.com",
+                  "responsibleOrganization": "CNES"
+                  "processingHistory": [
+                  ]
+              },
+              "context": {
+                  "objectName": "...",
+                  "purpose": "....",
+                  "acquisitionDate": "...",
+                  ...
+              },
+              "accessRights": {
+                  "licensing": "CNES",
+                  "pubicationAcknowledgment": "Based on data obtained from the SSALTO Science Archive Facility."
+              }
+           }
+          },
+          "eventsHistory": [
+            {
+              "eventDate":".....",
+              "eventType:"....",
+              "eventDescription":"..."
+          ]
+        }
+        // TODO : core data model must be defined.
+        ]]>                 
+            </pre>            
+        </wadl:doc>
+    </wadl:representation>     
+
+    <wadl:representation id="sipVersions" mediaType="application/vnd.geo+json">
+        <wadl:doc>
+            See IANA : http://www.iana.org/assignments/media-types/application/vnd.geo+json
+        </wadl:doc>        
+        <wadl:doc title="Submitted Information Package's Versions">
+            Represents the different versions of a SIP identifier.<br/>
+            <pre>
+        <![CDATA[
+        { 
+          "type": "FeatureCollection",
+          "id":"....", //SIP_ID
+          "creationDate":"1977-04-22T06:00:00Z",
+          "modificationDate":"1977-04-22T06:00:00Z",
+          "projectName":"....",
+          "features": [  // The different versions of the SIP
+            {            // inside the properties can be replaced by the URI of the VOTable, FITS or external SIP 
+            "type": "Feature",
+            "id":"URN:SIP:f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+            "creationDate":"1977-04-22T06:00:00Z",
+            "modificationDate":"1977-04-22T06:00:00Z",
+            "geometry": null,
+            "status": "COMPLETED",            
+            "properties": {
+              "dataObject":{
+                  "uri":"file:///tmp/example.zip",
+                  "mimeType":"application/zip",
+                  "fileSize":1024, //KB
+                  "md5":"d6aa97d33d459ea3670056e737c99a3d"
+              },
+             "pdi": {
+                "provenance": {
+                    "acquisitionDate": "....",
+                    "responsiblePerson": "person@example.com",
+                    "responsibleOrganization": "CNES"
+                    "processingHistory": [
+                    ]
+                },
+                "context": {
+                    "objectName": "...",
+                    "purpose": "....",
+                    "acquisitionDate": "...",
+                    ...
+                },
+                "accessRights": {
+                    "licensing": "CNES",
+                    "pubicationAcknowledgment": "Based on data obtained from the SSALTO Science Archive Facility."
+                }
+             }
+            }
+          }, ...
+         ]          
+        }
+        // TODO : core data model must be defined.
+        ]]>                 
+            </pre>            
+        </wadl:doc>
+    </wadl:representation>     
+                                                                                                                                                                            
+    <wadl:resources base="http://api.regards.ingest">
+        <wadl:resource path="sessions">
+            <wadl:doc>
+                A session is an identifier that groups a set of SIPs for which the system makes a follow up as a single ingestion.
+                For example, an administrator may ingest his SIP under a session so that he can get statistics about a set of SIP that he is ingesting.
+                Statistics could be the follow up of the ingest task associated to a number of SIPs to ingest, the number of SIP as successed and so on.               
+            </wadl:doc>
+            <wadl:method name="GET">                
+                <wadl:doc>Retrieves the list of sessions from the most recent opened session to the oldest one</wadl:doc>
+                <wadl:request>                    
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="startPage" required="false" default="1" type="xsd:int">
+                        <wadl:doc>Page number of the result. The page number starts to 1.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="itemsPerPage" required="false" default="50" type="xsd:int">
+                        <wadl:doc>Number of items per page that returns the server.</wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="query" name="filterByProject" required="false" type="xsd:string">
+                        <wadl:doc>
+                            Filters the elements for a given project.
+                            The project name is set to the submitted SIP according to the token.
+                        </wadl:doc>
+                    </wadl:param>                      
+                    <wadl:param style="query" name="FilterFromDate" required="false" type="xsd:dateTime">
+                        <wadl:doc>Filters the elements from the given date to now().</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="query" name="filterByState" required="false">
+                        <wadl:doc>Filters the session by processing state</wadl:doc> 
+                        <wadl:option value="OPENED">
+                            <wadl:doc>The session is opened.</wadl:doc>
+                        </wadl:option>      
+                        <wadl:option value="CLOSED">
+                            <wadl:doc>The session is closed. When a session is closed, a new SIP cannot be ingested under this session.</wadl:doc>
+                        </wadl:option>                                           
+                    </wadl:param>                                                                                                                   
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>The list of sessions.</wadl:doc>
+                    <wadl:representation href="#sessionCollection"/>                      
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                     
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                 
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>Creates a session to ingest SIPs under a session identifier.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>
+                            The authorization token. Public has a different and an unlimited token for each project.
+                            This token is used to get the email address so that the responsible keyword is set with this email in the session description.
+                        </wadl:doc>
+                    </wadl:param>                      
+                    <wadl:param style="query" name="Label" required="false" type="xsd:string">
+                        <wadl:doc>Just a label to give a name that a humain can easily understand when the list of sessions is displayed.</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="query" name="NumberOfSIPs" required="true" type="xsd:int">
+                        <wadl:doc>
+                            Number of SIPs within the session. When this number is reached, the session is automatically closed and it is not possible to ingest a new SIP under this session.
+                        </wadl:doc>
+                    </wadl:param>                  
+                </wadl:request>
+                <wadl:response status="303">
+                    <wadl:doc>
+                        The session is created. Redirects to /sessions/{sessionId}
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>   
+                <wadl:response status="400">
+                    <wadl:doc>The NumberOfSIPs parameter is required.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>  
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                      
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>   
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                             
+            </wadl:method>
+        </wadl:resource>
+        <wadl:resource path="sessions/{sessionId}">
+            <wadl:doc>Handles a set of submitted SIPs under a session identifier.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Retrieves information about a session.</wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="template" name="sessionId" required="true" type="xsd:string">
+                        <wadl:doc>The session idenfier that groups a set of provided SIPs.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="startPage" required="false" default="1" type="xsd:int">
+                        <wadl:doc>Page number of the result. The page number starts to 1.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="itemsPerPage" required="false" default="50" type="xsd:int">
+                        <wadl:doc>Number of items per page that returns the server.</wadl:doc>
+                    </wadl:param>                      
+                    <wadl:param style="query" name="filterByProject" required="false" type="xsd:string">
+                        <wadl:doc>
+                            Filters the elements for a given project.
+                            The project name is set to the submitted SIP according to the token.
+                        </wadl:doc>
+                    </wadl:param>                                         
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Information about the session.</wadl:doc>
+                    <wadl:representation href="#session"/>
+                </wadl:response>   
+                <wadl:response status="400">
+                    <wadl:doc>Wrong query parameter.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>    
+                <wadl:response status="404">
+                    <wadl:doc>Unknown session identifier.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                   
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                  
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>
+                    Ingests a SIP using a session identifier.
+                </wadl:doc>
+                <wadl:doc>
+                    A new SIP can be ingested with the same SIP indentifier. In this case, a new IP identifier is created.  
+                </wadl:doc>                
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="template" name="sessionId" required="true" type="xsd:string">
+                        <wadl:doc>The session idenfier that groups a set of provided SIPs.</wadl:doc>
+                    </wadl:param> 
+                    <wadl:representation href="#sipProvider"/>
+                    <wadl:representation href="#sipProviderAsEmbeddedFile"/>
+                    <wadl:representation href="#sipProviderAsReference"/> 
+                                          
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Information about the session.</wadl:doc>
+                    <wadl:representation href="#session"/>
+                </wadl:response>   
+                <wadl:response status="400">
+                    <wadl:doc>The SIP representation is not valid.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="404">
+                    <wadl:doc>Unknown session identifier.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                    
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>  
+                <wadl:response status="409">
+                    <wadl:doc>The submitted SIP is refused because it was already submitted with the same information.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="415">
+                    <wadl:doc>Unsupported media type.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                  
+                <wadl:response status="423">
+                    <wadl:doc>The resource is locked.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                  
+            </wadl:method>
+            <wadl:method name="DELETE">
+                <wadl:doc>
+                    Deletes a session and locks the resource /sessions/{sessionId} for the verbs POST and DELETE. 
+                    Deleting a session involves to delete :
+                    <ul>
+                        <li>The session identifier</li>
+                        <li>The SIPs description related to this session identifier</li>
+                        <li>The AIPs description related to each SIP</li>
+                        <li>The files (data object, quicklook, ...) related to each AIP description according to the access right (Some files are handled by REGARDS itself whereas others can be handled by another System.</li>
+                        <li>The AIP in the catalog</li> 
+                        <li>The link TAG/AIP for each AIP to delete</li>
+                    </ul>
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="template" name="sessionId" required="true" type="xsd:string">
+                        <wadl:doc>The session idenfier that groups a set of provided SIPs.</wadl:doc>
+                    </wadl:param>                                        
+                </wadl:request>             
+                <wadl:response status="303">
+                    <wadl:doc>
+                        Returned by the server when operation is asynchronous. 
+                        The server redirects the client to /session/{sessionId}.                          
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>                               
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>    
+                <wadl:response status="404">
+                    <wadl:doc>Unknown session identifier.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                    
+                </wadl:response>                 
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>  
+                <wadl:response status="423">
+                    <wadl:doc>The resource is locked.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                   
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>    
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="521">
+                    <wadl:doc>The server has deleted all SIPs that he could. But one ore several SIPs cannot be deleted.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                                           
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>
+        </wadl:resource>
+   
+        <wadl:resource path="sips">
+            <wadl:doc>Handles a collection of submitted SIPs.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Retrieves the list of submitted SIPs.</wadl:doc>    
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="query" name="startPage" required="false" default="1" type="xsd:int">
+                        <wadl:doc>Page number of the result. The page number starts to 1.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="itemsPerPage" required="false" default="50" type="xsd:int">
+                        <wadl:doc>Number of items per page that returns the server.</wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="query" name="filterByProject" required="false" type="xsd:string">
+                        <wadl:doc>
+                            Filters the elements for a given project.
+                            The project name is set to the submitted SIP according to the token.
+                        </wadl:doc>
+                    </wadl:param>                       
+                    <wadl:param style="query" name="FilterFromDate" required="false" type="xsd:dateTime">
+                        <wadl:doc>Filters the elements from the given date to now().</wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="query" name="filterByState" required="false">
+                        <wadl:doc>Filters the session by processing state</wadl:doc>                      
+                        <wadl:option value="QUEUED">
+                            <wadl:doc>The creation of the session has been accepted for execution but is waiting in a queue.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="EXECUTING">
+                            <wadl:doc>The session is running.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="COMPLETED">
+                            <wadl:doc>A job has completed successfully.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ERROR">
+                            <wadl:doc>Some form of error has occured.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ABORTED">
+                            <wadl:doc>The job has been aborted, either by user request of by the server because of lack or overuse of ressources</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="SUSPENDED">
+                            <wadl:doc>The job has been suspended by the system during the execution. This might be because of temporary lack of resource. The job will be automatically resumed into the EXECUTNG phase without any intervention when ressource becomes available.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ARCHIVED">
+                            <wadl:doc>The job has been archived by the server at destruction time. An archived job may deleted the results to reclaim resources, but must jave job metadata preserved. This is an alternative that the server may choose in contrast to completely destroying all records of the job.</wadl:doc>
+                        </wadl:option>
+                    </wadl:param>                                                                                                                                                         
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation href="#sipCollection"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>  
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>      
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>    
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                              
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>Ingests a new SIP.</wadl:doc>
+                <wadl:doc>
+                    A new SIP can be ingested with the same SIP indentifier. In this case, a new IP identifier is created.  
+                </wadl:doc>                 
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                                   
+                    <wadl:representation href="#sipProvider"/>
+                    <wadl:representation href="#sipProviderAsEmbeddedFile"/>
+                    <wadl:representation href="#sipProviderAsReference"/>      
+                </wadl:request>               
+                <wadl:response status="303">
+                    <wadl:doc>
+                        The server redirects the client to /sips/{sipId}.           
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>The SIP representation is not valid. The problem may come when the SIP_ID or a checksum related to a file are not set in the SIP description.</wadl:doc>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="409">
+                    <wadl:doc>The submitted SIP is refused because it was already submitted with the same information.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="415">
+                    <wadl:doc>Unsupported media type.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                                     
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>    
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                            
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>            
+        </wadl:resource>
+        <wadl:resource path="sips/{sipId}">
+            <wadl:doc>Handles a provided SIP.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>
+                    Retrieves information about a SIP.
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="template" name="sipId" required="true" type="xsd:string">
+                        <wadl:doc>An existing SIP identifier that has been provided by the data provider.</wadl:doc>
+                    </wadl:param>                                        
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Retrieves the SIP description.</wadl:doc>
+                    <wadl:representation href="#sipVersions"/>
+                </wadl:response>               
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="404">
+                    <wadl:doc>The SIP identifier is unknown.</wadl:doc>
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The SIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                   
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response> 
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                  
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>
+                    Creates a new version of the SIP for a given SIP identifier.
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="template" name="sipId" required="true" type="xsd:string">
+                        <wadl:doc>An existing SIP identifier that has been provided by the data provider.</wadl:doc>
+                    </wadl:param>  
+                    <wadl:representation href="#sipProvider"/>
+                    <wadl:representation href="#sipProviderAsEmbeddedFile"/>
+                    <wadl:representation href="#sipProviderAsReference"/>                                                           
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Retrieves the SIP description.</wadl:doc>
+                    <wadl:representation href="#sipVersions"/>
+                </wadl:response>               
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="404">
+                    <wadl:doc>The SIP identifier is unknown.</wadl:doc>
+                </wadl:response>                      
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="415">
+                    <wadl:doc>Unsupported media type.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                  
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                 
+            </wadl:method>            
+            <wadl:method name="DELETE">
+                <wadl:doc>
+                    Deletes a SIP ans locks the resource sips/{sipId} for DELETE. 
+                    Deleting a SIP involves to delete :
+                    <ul>                        
+                        <li>The SIPs description related to this session identifier</li>
+                        <li>The AIPs description related to each SIP</li>
+                        <li>The files (data object, quicklook, ...) related to each AIP description according to the access right (Some files are handled by REGARDS itself whereas others can be handled by another System.</li>
+                        <li>The AIP in the catalog</li>
+                        <li>The link TAG/AIP for each AIP to delete</li>
+                    </ul>
+                    It also requires to set the SIP_STATE to archived in the session identifier when the SIP is linked to a session.                   
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                     
+                </wadl:request>               
+                <wadl:response status="303">
+                    <wadl:doc>
+                        Returned by the server when the task is an asynchronous operation.
+                        The server redirects the client to /sips/{sipId}.                
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>                                               
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>    
+                <wadl:response status="404">
+                    <wadl:doc>Unknown session SIP identifier.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                    
+                </wadl:response>                
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>    
+                <wadl:response status="423">
+                    <wadl:doc>The resource is locked.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>   
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                             
+            </wadl:method>    
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>                                
+        </wadl:resource>
+
+        <wadl:resource path="ips">
+            <wadl:doc>
+                Handles an IP. An IP is particular version of a SIP.                
+            </wadl:doc>
+            <wadl:method name="GET">
+                <wadl:doc>Retrieves the list of provided SIP by the data provider.</wadl:doc>    
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="query" name="startPage" required="false" default="1" type="xsd:int">
+                        <wadl:doc>Page number of the result. The page number starts to 1.</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="query" name="itemsPerPage" required="false" default="50" type="xsd:int">
+                        <wadl:doc>Number of items per page that returns the server.</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="query" name="filterByProject" required="false" type="xsd:string">
+                        <wadl:doc>
+                            Filters the elements for a given project.
+                            The project name is set to the submitted SIP according to the token.
+                        </wadl:doc>
+                    </wadl:param>                        
+                    <wadl:param style="query" name="FilterFromDate" required="false" type="xsd:dateTime">
+                        <wadl:doc>Filters the elements from the given date to now().</wadl:doc>
+                    </wadl:param> 
+                    <wadl:param style="query" name="filterByState" required="false">
+                        <wadl:doc>Filters the session by processing state</wadl:doc>                      
+                        <wadl:option value="QUEUED">
+                            <wadl:doc>The creation of the session has been accepted for execution but is waiting in a queue.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="EXECUTING">
+                            <wadl:doc>The session is running.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="COMPLETED">
+                            <wadl:doc>A job has completed successfully.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ERROR">
+                            <wadl:doc>Some form of error has occured.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ABORTED">
+                            <wadl:doc>The job has been aborted, either by user request of by the server because of lack or overuse of ressources</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="SUSPENDED">
+                            <wadl:doc>The job has been suspended by the system during the execution. This might be because of temporary lack of resource. The job will be automatically resumed into the EXECUTNG phase without any intervention when ressource becomes available.</wadl:doc>
+                        </wadl:option>
+                        <wadl:option value="ARCHIVED">
+                            <wadl:doc>The job has been archived by the server at destruction time. An archived job may deleted the results to reclaim resources, but must jave job metadata preserved. This is an alternative that the server may choose in contrast to completely destroying all records of the job.</wadl:doc>
+                        </wadl:option>
+                    </wadl:param>                                                                                                                                                          
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:representation href="#sipCollection"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>One of the query parameters is wrong.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>     
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>
+                    Ingests a new SIP. An internal unique identifier of the SIP is created and added to it.
+                </wadl:doc>
+                <wadl:doc>
+                    A new SIP can be ingested with the same SIP indentifier. In this case, a new IP identifier is created.  
+                </wadl:doc>                 
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                
+                    <wadl:representation href="#sipProvider"/>
+                </wadl:request>             
+                <wadl:response status="303">
+                    <wadl:doc>
+                        The server redirects the client to /ips/{ipId}.                         
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>The SIP representation is not valid</wadl:doc>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>  
+                <wadl:response status="409">
+                    <wadl:doc>The submitted SIP is refused because it was already submitted with the same information.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                    
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>    
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                            
+            </wadl:method>
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>            
+        </wadl:resource>
+        <wadl:resource path="ips/{ipId}">
+            <wadl:doc>Handles a submitted SIP.</wadl:doc>
+            <wadl:method name="GET">
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="template" name="ipId" required="true" type="xsd:string">
+                        <wadl:doc>An existing SIP identifier that has been provided by the data provider.</wadl:doc>
+                    </wadl:param>                                        
+                </wadl:request>
+                <wadl:response status="200">
+                    <wadl:doc>Retrieves the IP description.</wadl:doc>
+                    <wadl:representation href="#ip"/>
+                </wadl:response>               
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="404">
+                    <wadl:doc>The SIP identifier is unknown.</wadl:doc>
+                </wadl:response>                    
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>
+                <wadl:response status="410">
+                    <wadl:doc>URI no longer exists. The SIP has been deleted. Only the trace of this URI is kept.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                                                      
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                 
+            </wadl:method>
+            <wadl:method name="POST">
+                <wadl:doc>
+                    Creates a new version of the IP for a given IP identifier.
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                
+                    <wadl:representation href="#ip"/>                    
+                </wadl:request>
+                <wadl:response status="204">
+                    <wadl:doc>Returned by the server when the task is a synchronous operation.</wadl:doc>
+                </wadl:response>                
+                <wadl:response status="303">
+                    <wadl:doc>
+                        The server redirects the client to /ips/{ipId}.              
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>The IP representation is not valid</wadl:doc>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                     
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                                
+            </wadl:method>            
+            <wadl:method name="PUT">
+                <wadl:doc>
+                    Updates a SIP with its internal unique identifier without the creation of a SIP version.
+                    During this task, the resource is locked for DELETE and PUT.
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                
+                    <wadl:representation href="#ip"/>                    
+                </wadl:request>
+                <wadl:response status="204">
+                    <wadl:doc>Returned by the server when the task is a synchronous operation.</wadl:doc>
+                </wadl:response>                
+                <wadl:response status="303">
+                    <wadl:doc>
+                        The server redirects the client to /ips/{ipId}.              
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>
+                <wadl:response status="400">
+                    <wadl:doc>The IP representation is not valid</wadl:doc>
+                </wadl:response>                
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>   
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>     
+                <wadl:response status="423">
+                    <wadl:doc>The resource is locked.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                 
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>   
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                               
+            </wadl:method>
+            <wadl:method name="DELETE">
+                <wadl:doc>
+                    Deletes an IP and locks the resource for DELETE and PUT during this task. Deleting a SIP involves to delete :
+                    <ul>                        
+                        <li>The SIPs description related to this session identifier</li>
+                        <li>The AIPs description related to each SIP</li>
+                        <li>The files (data object, quicklook, ...) related to each AIP description according to the access right (Some files are handled by REGARDS itself whereas others can be handled by another System.</li>
+                        <li>The AIP in the catalog</li>
+                        <li>The link TAG/AIP for each AIP to delete</li>
+                    </ul>
+                    It also requires to set the SIP_STATE to archived in the session identifier when the SIP is linked to a session.                   
+                </wadl:doc>
+                <wadl:request>
+                    <wadl:param style="header" name="Authorization" required="true" type="xsd:string">
+                        <wadl:doc>The authorization token. Public has a different and an unlimited token for each project</wadl:doc>
+                    </wadl:param>                     
+                </wadl:request>           
+                <wadl:response status="303">
+                    <wadl:doc>
+                        Returned by the server when the task is an asynchronous operation.
+                        The server redirects the client to /ips/{ipId}.             
+                    </wadl:doc>
+                    <wadl:representation href="#createJob"/>
+                </wadl:response>                                              
+                <wadl:response status="401">
+                    <wadl:doc>An user authentication is needed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>        
+                <wadl:response status="403">
+                    <wadl:doc>The user is not allowed to access to this service.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>     
+                <wadl:response status="404">
+                    <wadl:doc>Unknown IP identifier.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                    
+                </wadl:response>                               
+                <wadl:response status="405">
+                    <wadl:doc>Method not allowed.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="423">
+                    <wadl:doc>The resource is locked.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response>                     
+                <wadl:response status="500">
+                    <wadl:doc>Internal server error.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>                
+                </wadl:response> 
+                <wadl:response status="503">
+                    <wadl:doc>The service is unavailable because the server is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>  
+                <wadl:response status="504">
+                    <wadl:doc>The service is unavailable because the server uses a tierce server, which is overloaded or in maintenance.</wadl:doc>
+                    <wadl:representation href="#serverErrorJson"/>
+                    <wadl:representation href="#serverErrorHtml"/>        
+                </wadl:response>                                              
+            </wadl:method>  
+            <wadl:method name="OPTIONS">
+                <wadl:doc>
+                    CORS support.
+                </wadl:doc>
+                <wadl:request name="GET">
+                    <wadl:param style="header" name="Origin" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>
+                    <wadl:param style="header" name="Access-Control-Request-Method" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Request-Headers" required="true" type="xsd:string">
+                        <wadl:doc>
+                            CORS support This parameter is automatically added by the browser
+                        </wadl:doc>
+                    </wadl:param>                                       
+                </wadl:request>
+                <wadl:response status="200"> 
+                    <wadl:doc>
+                        Returns the CORS support.
+                    </wadl:doc>
+                    <wadl:param style="header" name="Access-Control-Allow-Origin" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter defines which host is able to make cross-domain queries.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Credentials" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows to propagate cookies, client SSL certificate and authentication parameters.
+                        </wadl:doc>
+                    </wadl:param>   
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>    
+                    <wadl:param style="header" name="Access-Control-Expose-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter allows the client to read the headers from the server's response.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Max-Age" required="false" type="xsd:int">
+                        <wadl:doc>
+                            CORS support. This parameter caches the CORS request by setting the result in cache. The time, during the information is cached, is expressed in seconds. 
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Methods" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the verbs that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>  
+                    <wadl:param style="header" name="Access-Control-Allow-Headers" required="false" type="xsd:string">
+                        <wadl:doc>
+                            CORS support. This parameter contains the headers parameters that the client is allowed to use.
+                        </wadl:doc>
+                    </wadl:param>                                                                                                                                     
+                </wadl:response>
+            </wadl:method>
+                                  
+        </wadl:resource>    
+    </wadl:resources>
+</wadl:application>
